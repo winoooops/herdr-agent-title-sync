@@ -1,4 +1,4 @@
-# Herdr Agent 标题同步
+# Herdr Agent Title Sync
 
 [English](README.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
 
