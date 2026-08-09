@@ -1,12 +1,17 @@
 {
-  "name": "herdr-better-renaming",
-  "version": "0.1.0",
+  "name": "herdr-agent-title-sync",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.5"
+    "node": ">=22.18"
   },
   "scripts": {
-    "test": "node --no-warnings --test"
+    "test": "npm run typecheck && node --no-warnings --test index.test.ts",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "typescript": "^7.0.2"
   }
 }

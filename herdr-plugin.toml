@@ -1,31 +1,29 @@
-id = "herdr-better-renaming"
-name = "Better Renaming"
-version = "0.1.0"
+id = "herdr-agent-title-sync"
+name = "Agent Title Sync"
+version = "0.2.0"
 min_herdr_version = "0.7.0"
-description = "Keep Herdr pane labels in sync with coding-agent session titles."
+description = "Automatically sync Herdr pane titles with coding-agent session titles."
 platforms = ["linux", "macos", "windows"]
 
 [[startup]]
-command = ["node", "--no-warnings", "index.mjs", "sync-all"]
+command = ["node", "--no-warnings", "src/index.ts", "start-watcher"]
+
+[[actions]]
+id = "start-watcher"
+title = "Start or restart the title watcher"
+command = ["node", "--no-warnings", "src/index.ts", "start-watcher"]
+
+[[actions]]
+id = "stop-watcher"
+title = "Stop the title watcher"
+command = ["node", "--no-warnings", "src/index.ts", "stop-watcher"]
 
 [[actions]]
 id = "sync-all"
 title = "Sync all agent pane titles"
-command = ["node", "--no-warnings", "index.mjs", "sync-all"]
+command = ["node", "--no-warnings", "src/index.ts", "sync-all"]
 
 [[actions]]
 id = "install-integrations"
 title = "Install required agent integrations"
-command = ["node", "--no-warnings", "index.mjs", "install-integrations"]
-
-[[events]]
-on = "pane.agent_detected"
-command = ["node", "--no-warnings", "index.mjs", "sync-event"]
-
-[[events]]
-on = "pane.agent_status_changed"
-command = ["node", "--no-warnings", "index.mjs", "sync-event"]
-
-[[events]]
-on = "pane.focused"
-command = ["node", "--no-warnings", "index.mjs", "sync-event"]
+command = ["node", "--no-warnings", "src/index.ts", "install-integrations"]
