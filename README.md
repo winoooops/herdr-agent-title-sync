@@ -7,7 +7,7 @@ dependencies.
 
 ## Install from GitHub
 
-Requires Herdr 0.7+ and Node.js 22.18+.
+Requires Herdr 0.7.5+ and Node.js 22.18+.
 
 ```sh
 herdr plugin install winoooops/herdr-agent-title-sync

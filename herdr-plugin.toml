@@ -1,7 +1,7 @@
 id = "herdr-agent-title-sync"
 name = "Agent Title Sync"
 version = "0.2.0"
-min_herdr_version = "0.7.0"
+min_herdr_version = "0.7.5"
 description = "Automatically sync Herdr pane titles with coding-agent session titles."
 platforms = ["linux", "macos", "windows"]
 
