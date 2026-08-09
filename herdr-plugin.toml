@@ -1,5 +1,5 @@
-id = "vimeflow.agent-pane-titles"
-name = "Agent Pane Titles"
+id = "vimeflow.better-renaming"
+name = "Better Renaming"
 version = "0.1.0"
 min_herdr_version = "0.7.0"
 description = "Keep Herdr pane labels in sync with coding-agent session titles."

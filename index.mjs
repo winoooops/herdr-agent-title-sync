@@ -222,7 +222,7 @@ function runHerdr(args) {
 
 function paneStatePath(paneId) {
   const root = process.env.HERDR_PLUGIN_STATE_DIR ||
-    join(process.env.XDG_STATE_HOME || join(homedir(), ".local", "state"), "herdr-agent-pane-titles");
+    join(process.env.XDG_STATE_HOME || join(homedir(), ".local", "state"), "herdr-better-renaming");
   return join(root, `${encodeURIComponent(paneId)}.json`);
 }
 

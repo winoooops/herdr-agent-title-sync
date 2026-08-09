@@ -17,7 +17,7 @@ import {
 } from "./index.mjs";
 
 function fixtureDir(name) {
-  const path = join(tmpdir(), `herdr-agent-pane-titles-${process.pid}-${name}`);
+  const path = join(tmpdir(), `herdr-better-renaming-${process.pid}-${name}`);
   mkdirSync(path, { recursive: true });
   return path;
 }
