@@ -1,0 +1,31 @@
+id = "vimeflow.agent-pane-titles"
+name = "Agent Pane Titles"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Keep Herdr pane labels in sync with coding-agent session titles."
+platforms = ["linux", "macos", "windows"]
+
+[[startup]]
+command = ["node", "--no-warnings", "index.mjs", "sync-all"]
+
+[[actions]]
+id = "sync-all"
+title = "Sync all agent pane titles"
+command = ["node", "--no-warnings", "index.mjs", "sync-all"]
+
+[[actions]]
+id = "install-integrations"
+title = "Install required agent integrations"
+command = ["node", "--no-warnings", "index.mjs", "install-integrations"]
+
+[[events]]
+on = "pane.agent_detected"
+command = ["node", "--no-warnings", "index.mjs", "sync-event"]
+
+[[events]]
+on = "pane.agent_status_changed"
+command = ["node", "--no-warnings", "index.mjs", "sync-event"]
+
+[[events]]
+on = "pane.focused"
+command = ["node", "--no-warnings", "index.mjs", "sync-event"]
