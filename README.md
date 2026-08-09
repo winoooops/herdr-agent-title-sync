@@ -11,14 +11,14 @@ Requires Herdr 0.7+ and Node.js 22.5+.
 
 ```sh
 herdr plugin link /home/will/projects/herdr-better-renaming
-herdr plugin action invoke install-integrations --plugin vimeflow.better-renaming
+herdr plugin action invoke install-integrations --plugin herdr-better-renaming
 ```
 
 Restart any already-running agents once so Herdr can capture their session IDs,
 then sync existing panes:
 
 ```sh
-herdr plugin action invoke sync-all --plugin vimeflow.better-renaming
+herdr plugin action invoke sync-all --plugin herdr-better-renaming
 ```
 
 New titles update automatically on agent detection, state changes, focus, and
@@ -32,7 +32,7 @@ Others can then install it with:
 
 ```sh
 herdr plugin install OWNER/herdr-better-renaming
-herdr plugin action invoke install-integrations --plugin vimeflow.better-renaming
+herdr plugin action invoke install-integrations --plugin herdr-better-renaming
 ```
 
 The Herdr marketplace indexes public repositories carrying the
@@ -54,5 +54,5 @@ Default agent data roots honor `CLAUDE_CONFIG_DIR`, `CODEX_HOME`,
 ```sh
 npm test
 herdr plugin list --json
-herdr plugin log list --plugin vimeflow.better-renaming --limit 20
+herdr plugin log list --plugin herdr-better-renaming --limit 20
 ```
