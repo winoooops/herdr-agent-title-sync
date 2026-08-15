@@ -4,6 +4,8 @@
 
 让 Herdr 窗格标签与 Claude Code、Codex、Kimi Code 和 OpenCode 生成的会话标题保持同步。插件只读取本地 Agent 状态并使用 Herdr 内置 CLI；它不会发起网络请求，也没有运行时 npm 依赖。
 
+与 [herdr-agent-watcher](https://github.com/winoooops/herdr-agent-watcher) 搭配使用：后者为 Herdr 提供编码 Agent 可观测性，包括实时侧边栏卡片、生命周期通知和每个窗格的 Agent 元数据。
+
 ## 从 GitHub 安装
 
 需要 Herdr 0.7.5+ 和 Node.js 22.18+。

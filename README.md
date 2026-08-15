@@ -7,6 +7,10 @@ Code, Codex, Kimi Code, and OpenCode. The plugin reads only local agent state an
 uses Herdr's built-in CLI; it makes no network requests and has no runtime npm
 dependencies.
 
+Pairs with [herdr-agent-watcher](https://github.com/winoooops/herdr-agent-watcher),
+which adds coding-agent observability to Herdr: live sidebar cards, lifecycle
+notifications, and per-pane agent metadata.
+
 ## Install from GitHub
 
 Requires Herdr 0.7.5+ and Node.js 22.18+.

@@ -4,6 +4,8 @@
 
 Herdr のペインラベルを、Claude Code、Codex、Kimi Code、OpenCode が生成するセッションタイトルと同期します。このプラグインはローカルの Agent 状態のみを読み取り、Herdr の組み込み CLI を使用します。ネットワーク通信は行わず、実行時の npm 依存関係もありません。
 
+[herdr-agent-watcher](https://github.com/winoooops/herdr-agent-watcher) と組み合わせて使用できます。こちらは Herdr にコーディング Agent のオブザーバビリティを追加し、ライブサイドバーカード、ライフサイクル通知、ペインごとの Agent メタデータを提供します。
+
 ## GitHub からインストール
 
 Herdr 0.7.5 以降と Node.js 22.18 以降が必要です。
