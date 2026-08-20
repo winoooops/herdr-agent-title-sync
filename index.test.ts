@@ -179,7 +179,7 @@ test("sync-all renames a pane through the Herdr CLI", () => {
     `#!${process.execPath}\n` +
       `import { appendFileSync } from "node:fs";\n` +
       `const args = process.argv.slice(2);\n` +
-      `const pane = { agent: "claude", pane_id: "w1:p1", agent_session: { agent: "claude", kind: "id", value: "session-1" } };\n` +
+      `const pane = { pane_id: "w1:p1", agent_session: { agent: "claude", kind: "id", value: "session-1" } };\n` +
       `if (args[0] === "pane" && args[1] === "list") console.log(JSON.stringify({ result: { panes: [pane] } }));\n` +
       `else if (args[0] === "pane" && args[1] === "get") console.log(JSON.stringify({ result: { pane } }));\n` +
       `else if (args[0] === "pane" && args[1] === "rename") appendFileSync(process.env.FAKE_HERDR_LOG, JSON.stringify(args) + "\\n");\n` +

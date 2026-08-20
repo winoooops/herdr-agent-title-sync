@@ -110,7 +110,7 @@ async function syncPane(pane: Pane): Promise<void> {
   const paneId = pane.pane_id;
   if (!paneId) return;
   const previous = readPaneState(paneId);
-  if (!pane.agent) {
+  if (!pane.agent && !pane.agent_session?.agent) {
     // Agent exit invalidates our old title, but a label edited by the user stays.
     if (previous?.title === sanitizeTitle(pane.label)) {
       runHerdr(["pane", "rename", paneId, "--clear"]);
