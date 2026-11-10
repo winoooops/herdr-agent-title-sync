@@ -2,6 +2,16 @@
 
 All notable changes to Agent Title Sync are recorded here.
 
+## [Unreleased]
+
+### Fixed
+
+- Read OpenCode 2 session titles from the `session_v2` table, falling back to
+  the 1.x `session` table. Before, OpenCode 2 panes only got the truncated
+  terminal title.
+- Request JSON from `herdr plugin list`, so the watcher can detect that the
+  plugin was disabled and no longer counts the check as a failed pass.
+
 ## [0.2.0] - 2026-08-08
 
 ### Added
