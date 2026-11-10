@@ -177,7 +177,7 @@ export function stopWatcher(): void {
 }
 
 function pluginEnabled(): boolean {
-  const response = runHerdr(["plugin", "list"]);
+  const response = runHerdr(["plugin", "list", "--json"]);
   return response.result?.plugins?.some(
     (plugin) => plugin.plugin_id === PLUGIN_ID && plugin.enabled,
   ) === true;
