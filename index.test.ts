@@ -1,4 +1,5 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { once } from "node:events";
 import { spawn, spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -326,4 +327,110 @@ test("watcher exits without renaming when Herdr reports the plugin disabled", as
   }
   assert.equal(watcher.exitCode, 0);
   assert.equal(existsSync(log), false);
+  assert.equal(existsSync(join(stateRoot, "watcher.json")), false);
+  assert.equal(existsSync(join(stateRoot, "watcher-error.log")), false);
 });
+
+// These fixtures never invoke the installed Herdr or read real agent state.
+function shutdownFixture(t: import("node:test").TestContext, mode = "enabled") {
+  const root = mkdtempSync(join(tmpdir(), "herdr-title-shutdown-"));
+  const stateRoot = join(root, "state");
+  const control = join(root, "control.json");
+  const calls = join(root, "calls.jsonl");
+  const renames = join(root, "renames.jsonl");
+  const label = join(root, "label.txt");
+  const fakeHerdr = join(root, "herdr-fake.ts");
+  const configure = (nextMode: string, title = "First title") => {
+    const temporary = `${control}.tmp`;
+    writeFileSync(temporary, JSON.stringify({ mode: nextMode, title }));
+    renameSync(temporary, control);
+  };
+  configure(mode);
+  writeFileSync(label, "");
+  writeFileSync(
+    fakeHerdr,
+    `#!${process.execPath}\n` +
+      `import { appendFileSync, readFileSync, writeFileSync } from "node:fs";\n` +
+      `const args = process.argv.slice(2);\n` +
+      `const control = JSON.parse(readFileSync(process.env.FAKE_CONTROL, "utf8"));\n` +
+      `appendFileSync(process.env.FAKE_CALLS, JSON.stringify({ args, mode: control.mode }) + "\\n");\n` +
+      `if (control.mode === "unavailable") { console.error("fixture Herdr unavailable"); process.exit(1); }\n` +
+      `if (control.mode === "malformed") { console.log("not JSON"); process.exit(0); }\n` +
+      `if (args[0] === "plugin" && args[1] === "list") {\n` +
+      `  if (!args.includes("--json")) console.log("1 plugin installed:");\n` +
+      `  else console.log(JSON.stringify({ result: { plugins: [{ plugin_id: "herdr-agent-title-sync", enabled: control.mode === "enabled" }] } }));\n` +
+      `} else if (args[0] === "pane" && args[1] === "list") {\n` +
+      `  console.log(JSON.stringify({ result: { panes: [{ agent: "future-agent", pane_id: "w1:p1", label: readFileSync(process.env.FAKE_LABEL, "utf8"), terminal_title_stripped: control.title }] } }));\n` +
+      `} else if (args[0] === "pane" && args[1] === "rename") {\n` +
+      `  writeFileSync(process.env.FAKE_LABEL, args[3]);\n` +
+      `  appendFileSync(process.env.FAKE_RENAMES, JSON.stringify(args) + "\\n");\n` +
+      `} else process.exit(1);\n`,
+  );
+  chmodSync(fakeHerdr, 0o755);
+  const watcher = spawn(
+    process.execPath,
+    ["--no-warnings", fileURLToPath(new URL("src/index.ts", import.meta.url)), "watch"],
+    {
+      env: {
+        ...process.env,
+        FAKE_CONTROL: control,
+        FAKE_CALLS: calls,
+        FAKE_LABEL: label,
+        FAKE_RENAMES: renames,
+        HERDR_BIN_PATH: fakeHerdr,
+        HERDR_PLUGIN_STATE_DIR: stateRoot,
+        HERDR_AGENT_TITLE_SYNC_INTERVAL_MS: "25",
+      },
+      stdio: "ignore",
+    },
+  );
+  const closed = once(watcher, "close");
+  t.after(async () => {
+    if (watcher.exitCode === null && watcher.signalCode === null) watcher.kill();
+    await closed;
+    rmSync(root, { recursive: true, force: true });
+  });
+  return { watcher, configure, calls, renames, label, stateRoot };
+}
+
+test("running watcher exits cleanly after disable and makes no later renames", async (t) => {
+  const fixture = shutdownFixture(t);
+  const { watcher, stateRoot } = fixture;
+  // Observe real work before disabling, rather than starting already disabled.
+  await waitFor(() => existsSync(fixture.renames));
+  assert.equal(readFileSync(fixture.label, "utf8"), "First title");
+  assert.equal(existsSync(join(stateRoot, "watcher.json")), true);
+  fixture.configure("disabled", "Title while disabling");
+  // Disable is polled every 15 passes; allow subprocess startup time as well.
+  await waitFor(() => watcher.exitCode !== null, 10000);
+  assert.equal(watcher.exitCode, 0);
+  assert.equal(existsSync(join(stateRoot, "watcher.json")), false);
+  assert.equal(existsSync(join(stateRoot, "watcher-error.log")), false);
+  const calls = readFileSync(fixture.calls, "utf8");
+  const disabledCheck = calls.trim().split("\n").map((line) => JSON.parse(line)).some(
+    (call) => call.mode === "disabled" &&
+      JSON.stringify(call.args) === JSON.stringify(["plugin", "list", "--json"]),
+  );
+  assert.equal(disabledCheck, true);
+  // A title change after shutdown must not trigger another CLI call or rename.
+  const renames = readFileSync(fixture.renames, "utf8");
+  const label = readFileSync(fixture.label, "utf8");
+  fixture.configure("disabled", "Title after shutdown");
+  await new Promise((resolveWait) => setTimeout(resolveWait, 100));
+  assert.equal(readFileSync(fixture.calls, "utf8"), calls);
+  assert.equal(readFileSync(fixture.renames, "utf8"), renames);
+  assert.equal(readFileSync(fixture.label, "utf8"), label);
+});
+
+for (const mode of ["unavailable", "malformed"]) {
+  test(`watcher records ${mode} CLI failure instead of a clean disabled exit`, async (t) => {
+    const { watcher, stateRoot, renames } = shutdownFixture(t, mode);
+    await waitFor(() => watcher.exitCode !== null, 10000);
+    // watch() catches terminal errors, so exit status alone is not sufficient.
+    assert.equal(watcher.exitCode, 0);
+    assert.equal(existsSync(join(stateRoot, "watcher.json")), false);
+    assert.equal(existsSync(renames), false);
+    const error = readFileSync(join(stateRoot, "watcher-error.log"), "utf8");
+    assert.match(error, mode === "unavailable" ? /fixture Herdr unavailable/ : /SyntaxError/);
+  });
+}
