@@ -139,6 +139,20 @@ test("reads OpenCode title by exact session id", () => {
   assert.equal(opencodeTitle("session-1", path), "Open title");
 });
 
+test("reads OpenCode 2 titles from session_v2 and falls back to 1.x sessions", () => {
+  const root = fixtureDir("opencode-v2");
+  const path = join(root, "opencode.db");
+  const database = new DatabaseSync(path);
+  database.exec("CREATE TABLE session (id TEXT PRIMARY KEY, title TEXT NOT NULL)");
+  database.exec("CREATE TABLE session_v2 (id TEXT PRIMARY KEY, title TEXT)");
+  database.prepare("INSERT INTO session (id, title) VALUES (?, ?)").run("legacy", "Legacy title");
+  database.prepare("INSERT INTO session_v2 (id, title) VALUES (?, ?)").run("current", "Current title");
+  database.close();
+  assert.equal(opencodeTitle("current", path), "Current title");
+  assert.equal(opencodeTitle("legacy", path), "Legacy title");
+  assert.equal(opencodeTitle("missing", path), undefined);
+});
+
 test("preserves manual labels but updates plugin-owned labels", () => {
   const pane = {
     agent: "codex",
@@ -235,7 +249,8 @@ test("watcher applies a title changed during a running session", async () => {
       `import { appendFileSync, readFileSync, writeFileSync } from "node:fs";\n` +
       `const args = process.argv.slice(2);\n` +
       `const pane = JSON.parse(readFileSync(process.env.FAKE_PANE, "utf8"));\n` +
-      `if (args[0] === "plugin") console.log(JSON.stringify({ result: { plugins: [{ plugin_id: "herdr-agent-title-sync", enabled: true }] } }));\n` +
+      `if (args[0] === "plugin" && args[1] === "list" && !args.includes("--json")) console.log("1 plugin installed:");\n` +
+      `else if (args[0] === "plugin") console.log(JSON.stringify({ result: { plugins: [{ plugin_id: "herdr-agent-title-sync", enabled: true }] } }));\n` +
       `else if (args[0] === "pane" && args[1] === "list") console.log(JSON.stringify({ result: { panes: [pane] } }));\n` +
       `else if (args[0] === "pane" && args[1] === "rename") { pane.label = args[3]; writeFileSync(process.env.FAKE_PANE, JSON.stringify(pane)); appendFileSync(process.env.FAKE_HERDR_LOG, JSON.stringify(args) + "\\n"); }\n` +
       `else process.exit(1);\n`,
@@ -273,4 +288,42 @@ test("watcher applies a title changed during a running session", async () => {
     await waitFor(() => watcher.exitCode !== null).catch(() => watcher.kill());
   }
   assert.equal(watcher.exitCode, 0, stderr);
+});
+
+test("watcher exits without renaming when Herdr reports the plugin disabled", async () => {
+  const root = fixtureDir("watcher-disabled");
+  const stateRoot = join(root, "state");
+  const log = join(root, "herdr.log");
+  const fakeHerdr = join(root, "herdr-fake.ts");
+  writeFileSync(
+    fakeHerdr,
+    `#!${process.execPath}\n` +
+      `import { appendFileSync } from "node:fs";\n` +
+      `const args = process.argv.slice(2);\n` +
+      `const pane = { agent: "opencode", pane_id: "w1:p1", terminal_title_stripped: "OC | Some task" };\n` +
+      `if (args[0] === "plugin" && args[1] === "list" && !args.includes("--json")) console.log("1 plugin installed:");\n` +
+      `else if (args[0] === "plugin") console.log(JSON.stringify({ result: { plugins: [{ plugin_id: "herdr-agent-title-sync", enabled: false }] } }));\n` +
+      `else if (args[0] === "pane" && args[1] === "list") console.log(JSON.stringify({ result: { panes: [pane] } }));\n` +
+      `else if (args[0] === "pane" && args[1] === "rename") appendFileSync(process.env.FAKE_HERDR_LOG, JSON.stringify(args) + "\\n");\n` +
+      `else process.exit(1);\n`,
+  );
+  chmodSync(fakeHerdr, 0o755);
+
+  const script = fileURLToPath(new URL("src/index.ts", import.meta.url));
+  const watcher = spawn(process.execPath, ["--no-warnings", script, "watch"], {
+    env: {
+      ...process.env,
+      FAKE_HERDR_LOG: log,
+      HERDR_AGENT_TITLE_SYNC_INTERVAL_MS: "25",
+      HERDR_BIN_PATH: fakeHerdr,
+      HERDR_PLUGIN_STATE_DIR: stateRoot,
+    },
+  });
+  try {
+    await waitFor(() => watcher.exitCode !== null);
+  } finally {
+    watcher.kill();
+  }
+  assert.equal(watcher.exitCode, 0);
+  assert.equal(existsSync(log), false);
 });

@@ -18,13 +18,27 @@ export function opencodeTitle(sessionId: string, databasePath?: string): string 
 
   const database = new DatabaseSync(path, { readOnly: true });
   try {
-    const row = database.prepare("SELECT title FROM session WHERE id = ?").get(sessionId) as
-      | { title?: unknown }
-      | undefined;
-    return sanitizeTitle(row?.title);
+    for (const table of sessionTables(database)) {
+      const row = database.prepare(`SELECT title FROM ${table} WHERE id = ?`).get(sessionId) as
+        | { title?: unknown }
+        | undefined;
+      const title = sanitizeTitle(row?.title);
+      if (title) return title;
+    }
+    return undefined;
   } finally {
     database.close();
   }
+}
+
+// OpenCode 2 stores sessions in `session_v2` and keeps the 1.x `session`
+// table next to it, so sessions from either version can be in the same file.
+function sessionTables(database: DatabaseSync): string[] {
+  const rows = database
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('session_v2', 'session')")
+    .all() as Array<{ name: string }>;
+  const names = new Set(rows.map((row) => row.name));
+  return ["session_v2", "session"].filter((name) => names.has(name));
 }
 
 function findDatabase(): string | undefined {
